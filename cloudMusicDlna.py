@@ -236,9 +236,9 @@ def _url_get_json_load(url):
     try:
         if gzdata.info().get('Content-Encoding') == 'gzip':
             gziper = gzip.GzipFile(fileobj=gzdata)
-            return json.load(gziper)
+            return json.loads(gziper.read().decode('utf-8'))
         else:
-            return json.load(gzdata)
+            return json.loads(gzdata.read().decode('utf-8'))
             
     except Exception as e:
         print('decode error: ', url)
