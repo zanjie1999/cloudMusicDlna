@@ -2,7 +2,7 @@
 
 # 网易云音乐dlna推送
 # Sparkle
-# v1.0
+# v1.1
 
 
 import gzip
@@ -234,11 +234,12 @@ def _url_get_json_load(url):
         print('connect error: ', url)
         return {'code': ''}
     try:
-        if isinstance(gzdata, str):
-            return json.load(gzdata)
-        else:
+        if gzdata.info().get('Content-Encoding') == 'gzip':
             gziper = gzip.GzipFile(fileobj=gzdata)
             return json.load(gziper)
+        else:
+            return json.load(gzdata)
+            
     except Exception as e:
         print('decode error: ', url)
         return {'code': traceback.format_exc()}
@@ -676,14 +677,12 @@ if __name__ == '__main__':
         help()
         sys.exit(1)
 
-    device = ''
     url = ''
     vol = 0
     seek = '00:00:00'
     track = 1
     timeout = 1
     action = ''
-    compatibleOnly = True
     ssdp_version = 1
     for opt, arg in opts:
         if opt in ('-h', '--help'):
