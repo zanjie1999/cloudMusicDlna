@@ -16,7 +16,7 @@ dlna是怎么工作的，为什么app关掉了播放器还能继续播放直到�
 ### 如何使用
 需要python3（python2未测试）
 
-```cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1]```
+```cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...]```
 
 参数 | 描述
 ---- | -----
@@ -29,3 +29,4 @@ s | 歌曲id
 vol | 音量 范围0-100
 seek | 开始时间轴
 track | 歌单中开始的曲目
+url | 指定url播放
