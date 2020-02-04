@@ -1,2 +1,31 @@
-# cloudMusicDlna
-网易云歌单dlna推送
+# 网易云歌单dlna推送
+写这个东西源自于吃饭时的一个脑洞
+
+dlna是怎么工作的，为什么app关掉了播放器还能继续播放直到这首音乐放完？
+
+进过抓包测试，是通过http post方式传输xml来告诉播放器播放哪个url的。
+
+然后就写了这个东西，可以把它跑在电脑，手机，kindle，服务器，树莓派上，甚至跑在esp8266上（（（
+
+这个程序会按着歌单的顺序一首首的把歌推给dlna播放设备（比如音乐盒子，智能音响，电视等）
+
+其实Android端的网易云就有dlna这个功能XD（虽然经常放着放着就炸了）
+
+额外的功能：可以直接指定给播放的url，可以是电台，视频等等设备能直接访问的内容
+
+### 如何使用
+需要python3（python2未测试）
+
+```cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1]```
+
+参数 | 描述
+---- | -----
+play,pause,stop | 为播放控制，因为把程序关掉，播放也会到当前歌曲放完了才会停止
+info | 当前播放媒体信息
+i | 指定设备ip
+d | 指定设备名称
+l | 歌单id
+s | 歌曲id
+vol | 音量 范围0-100
+seek | 开始时间轴
+track | 歌单中开始的曲目
