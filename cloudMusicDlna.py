@@ -664,12 +664,14 @@ def playUrl(url):
         print('Play exception:\n{}'.format(traceback.format_exc()))
         sys.exit(1)
 
+
 if __name__ == '__main__':
     def help():
-        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1]')
+        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...]')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:d:l:s:", ['help', 'play', 'pause', 'stop', 'vol=', 'info'])
+        opts, args = getopt.getopt(sys.argv[1:], "hi:d:l:s:", [
+                                   'help', 'play', 'pause', 'stop', 'info', 'vol=', 'seek=', 'track=', 'url='])
     except getopt.GetoptError:
         help()
         sys.exit(1)
@@ -681,7 +683,7 @@ if __name__ == '__main__':
     track = 1
     timeout = 1
     action = ''
-    compatibleOnly = False
+    compatibleOnly = True
     ssdp_version = 1
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -709,6 +711,8 @@ if __name__ == '__main__':
             seek = arg
         elif opt == '--track':
             track = int(arg)
+        elif opt == '--url':
+            url = arg
 
     # 根据条件扫描dlna设备
     allDevices = discover(name=dlnaName, ip=dlnaIp,
@@ -738,7 +742,6 @@ if __name__ == '__main__':
         if url:
             playUrl(url)
         elif musicId:
-            playMusic(musicId,seek)
+            playMusic(musicId, seek)
         elif playlistId:
-            playPlaylist(playPlaylist,seek,track)
-        
+            playPlaylist(playPlaylist, seek, track)
