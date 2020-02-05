@@ -30,6 +30,7 @@ vol | 音量 范围0-100
 seek | 开始时间轴
 track | 歌单中开始的曲目
 url | 指定url播放
+urlNext | 指定下一个播放的url
 
 
 ### 更新日志
