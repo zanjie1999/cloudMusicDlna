@@ -770,7 +770,11 @@ if __name__ == '__main__':
     elif action == 'stop':
         dlnaDevice.stop()
     elif action == 'info':
-        print(dlnaDevice.media_info())
+        info = dlnaDevice.media_info()
+        while not info:
+            time.sleep(0.1)
+            info = dlnaDevice.media_info()
+        print(info)
     else:
         if vol:
             dlnaDevice.volume(vol)
