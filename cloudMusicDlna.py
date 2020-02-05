@@ -308,7 +308,7 @@ def playPlaylist(id, seek, track):
     """
     pl = getPlaylist(id)
     if pl:
-        print('playlist:', pl['name'])
+        print('Playlist:', pl['name'])
         allNum = len(pl['tracks'])
         if not track or track < 1 or track > allNum:
             track = 1
