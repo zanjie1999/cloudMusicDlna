@@ -321,8 +321,8 @@ def playPlaylist(id, seek, track):
                 playMusic(pl['tracks'][index]['id'], seek, pl['tracks']
                           [index+1]['id'] if index < allNum else None)
             else:
-                # 后期设置nextUrl就能无缝连播了
-                playMusic(nextUrl=pl['tracks'][index+1]
+                # 后期设置urlNext就能无缝连播了
+                playMusic(nextId=pl['tracks'][index+1]
                           ['id'] if index < allNum else None)
             # 等他放完
             time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
@@ -333,12 +333,11 @@ def playPlaylist(id, seek, track):
         # print('\r' + info)
 
 
-def playMusic(id, seek='00:00:00', nextId=None):
+def playMusic(id=None, seek='00:00:00', nextId=None):
     """ 播放歌曲id
     """
-    url = 'http://music.163.com/song/media/outer/url?id=' + str(id) + '.mp3'
-    urlNext = 'http://music.163.com/song/media/outer/url?id=' + \
-        str(nextId) + '.mp3'
+    url = 'http://music.163.com/song/media/outer/url?id=' + str(id) + '.mp3' if id else None
+    urlNext = 'http://music.163.com/song/media/outer/url?id=' + str(nextId) + '.mp3' if nextId else None
     playUrl(url, urlNext)
 
 
@@ -686,7 +685,7 @@ def playUrl(url=None, nextUrl=None):
             dlnaDevice.stop()
             dlnaDevice.set_current_media(url=url)
         if nextUrl:
-            dlnaDevice.set_next_media(nextUrl=url)
+            dlnaDevice.set_next_media(url=url)
         if url:
             dlnaDevice.play()
         info = dlnaDevice.media_info()
@@ -776,7 +775,7 @@ if __name__ == '__main__':
         if vol:
             dlnaDevice.volume(vol)
         if url:
-            playUrl(url, urlNext)
+            playUrl(url)
         elif musicId:
             playMusic(musicId, seek)
         elif playlistId:
