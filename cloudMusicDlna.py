@@ -2,7 +2,7 @@
 
 # 网易云音乐dlna推送
 # Sparkle
-# v1.2
+# v2.0
 
 
 import gzip
@@ -239,7 +239,7 @@ def _url_get_json_load(url):
             return json.loads(gziper.read().decode('utf-8'))
         else:
             return json.loads(gzdata.read().decode('utf-8'))
-            
+
     except Exception as e:
         print('decode error: ', url)
         return {'code': traceback.format_exc()}
@@ -312,18 +312,34 @@ def playPlaylist(id, seek, track):
         allNum = len(pl['tracks'])
         if not track or track < 1 or track > allNum:
             track = 1
+        flagFristPlay = True
         for index in range(track-1, allNum):
+            print('Track:', index+1)
             print(pl['tracks'][index]['name'])
-            playMusic(pl['tracks'][index]['id'], seek)
+            if flagFristPlay:
+                # 第一次播放设置两个url
+                playMusic(pl['tracks'][index]['id'], seek, pl['tracks']
+                          [index+1]['id'] if index < allNum else None)
+            else:
+                # 后期设置nextUrl就能无缝连播了
+                playMusic(nextUrl=pl['tracks'][index+1]
+                          ['id'] if index < allNum else None)
             # 等他放完
             time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
+        #     info=dlnaDevice.media_info()
+        #     while not info or info and info["s:Envelope"][0]["s:Body"][0]["u:GetMediaInfoResponse"][0]['MediaDuration'][0] != '':
+        #         time.sleep(1)
+        #         info=dlnaDevice.media_info()
+        # print('\r' + info)
 
 
-def playMusic(id, seek='00:00:00'):
+def playMusic(id, seek='00:00:00', nextId=None):
     """ 播放歌曲id
     """
     url = 'http://music.163.com/song/media/outer/url?id=' + str(id) + '.mp3'
-    playUrl(url)
+    urlNext = 'http://music.163.com/song/media/outer/url?id=' + \
+        str(nextId) + '.mp3'
+    playUrl(url, urlNext)
 
 
 # ========================================================
@@ -393,7 +409,7 @@ def _get_serve_ip(target_ip, target_port=80):
 
 
 class DlnapDevice:
-    """ 从dlnap复制来的 dlna 控制api
+    """ 从zanjie1999/dlnap复制来的 dlna 控制api
     """
 
     def __init__(self, raw, ip):
@@ -485,6 +501,16 @@ class DlnapDevice:
         """
         packet = self._create_packet('SetAVTransportURI', {
                                      'InstanceID': instance_id, 'CurrentURI': url, 'CurrentURIMetaData': ''})
+        _send_tcp((self.ip, self.port), packet)
+
+    def set_next_media(self, url, instance_id=0):
+        """ Set next media to playback.
+
+        url -- next media url
+        instance_id -- device instance id
+        """
+        packet = self._create_packet('SetNextAVTransportURI', {
+                                     'InstanceID': instance_id, 'NextURI': url, 'NextURIMetaData': ''})
         _send_tcp((self.ip, self.port), packet)
 
     def play(self, instance_id=0):
@@ -591,8 +617,8 @@ class DlnapDevice:
         pass
 
 
-def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3, 
-ssdp_version=1):
+def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3,
+             ssdp_version=1):
     """ 扫描dlna设备
 
     name -- name or part of the name to filter devices
@@ -644,7 +670,7 @@ ssdp_version=1):
     return devices
 
 
-def playUrl(url):
+def playUrl(url=None, nextUrl=None):
     """ 播放url
     """
     global dlnaDevice
@@ -656,11 +682,18 @@ def playUrl(url):
                 sys.exit(1)
             dlnaDevice = allDevices[0]
 
-        d.stop()
-        d.set_current_media(url=url)
-        d.play()
-        time.sleep(1)
-        print(dlnaDevice.media_info())
+        if url:
+            dlnaDevice.stop()
+            dlnaDevice.set_current_media(url=url)
+        if nextUrl:
+            dlnaDevice.set_next_media(nextUrl=url)
+        if url:
+            dlnaDevice.play()
+        info = dlnaDevice.media_info()
+        while not info:
+            time.sleep(0.1)
+            info = dlnaDevice.media_info()
+        print(info)
     except Exception as e:
         print('Device is unable to play media.')
         print('Play exception:\n{}'.format(traceback.format_exc()))
@@ -669,16 +702,17 @@ def playUrl(url):
 
 if __name__ == '__main__':
     def help():
-        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...]')
+        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...] [--urlNext http://...]')
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hi:d:l:s:", [
-                                   'help', 'play', 'pause', 'stop', 'info', 'vol=', 'seek=', 'track=', 'url='])
+                                   'help', 'play', 'pause', 'stop', 'info', 'vol=', 'seek=', 'track=', 'url=', 'urlNext='])
     except getopt.GetoptError:
         help()
         sys.exit(1)
 
     url = ''
+    urlNext = ''
     vol = 0
     seek = '00:00:00'
     track = 1
@@ -713,6 +747,8 @@ if __name__ == '__main__':
             track = int(arg)
         elif opt == '--url':
             url = arg
+        elif opt == '--urlNext':
+            urlNext = arg
 
     # 根据条件扫描dlna设备
     allDevices = discover(name=dlnaName, ip=dlnaIp,
