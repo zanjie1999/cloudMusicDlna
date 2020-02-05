@@ -2,7 +2,7 @@
 
 # 网易云音乐dlna推送
 # Sparkle
-# v1.1
+# v1.2
 
 
 import gzip
@@ -266,7 +266,7 @@ def _send_tcp(to, payload):
     """
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(5)
+        sock.settimeout(2)
         sock.connect(to)
         sock.sendall(payload.encode('utf-8'))
 
@@ -591,7 +591,8 @@ class DlnapDevice:
         pass
 
 
-def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3, ssdp_version=1):
+def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3, 
+ssdp_version=1):
     """ 扫描dlna设备
 
     name -- name or part of the name to filter devices
