@@ -669,7 +669,7 @@ def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3,
     return devices
 
 
-def playUrl(url=None, nextUrl=None):
+def playUrl(url=None, urlNext=None):
     """ 播放url
     """
     global dlnaDevice
@@ -684,8 +684,8 @@ def playUrl(url=None, nextUrl=None):
         if url:
             dlnaDevice.stop()
             dlnaDevice.set_current_media(url=url)
-        if nextUrl:
-            dlnaDevice.set_next_media(url=url)
+        if urlNext:
+            dlnaDevice.set_next_media(url=urlNext)
         if url:
             dlnaDevice.play()
         info = dlnaDevice.media_info()
