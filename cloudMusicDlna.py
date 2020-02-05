@@ -775,7 +775,7 @@ if __name__ == '__main__':
         if vol:
             dlnaDevice.volume(vol)
         if url:
-            playUrl(url)
+            playUrl(url, urlNext)
         elif musicId:
             playMusic(musicId, seek)
         elif playlistId:
