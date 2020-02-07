@@ -317,7 +317,7 @@ def playPlaylist(id, seek, track):
         url = None
         info = None
         for index in range(track-1, allNum):
-            print('\nTrack:', index+1, '/', allNum)
+            print('Track:', index+1, '/', allNum)
             print('Now: ', pl['tracks'][index]['name'])
             if flagFristPlay:
                 flagFristPlay = False
