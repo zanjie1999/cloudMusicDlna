@@ -57,6 +57,7 @@ dlnaIp = ''
 dlnaName = ''
 playlistId = ''
 musicId = ''
+showSeek = True
 
 # config from dlna
 SSDP_GROUP = ("239.255.255.250", 1900)
@@ -314,31 +315,50 @@ def playPlaylist(id, seek, track):
             track = 1
         flagFristPlay = True
         for index in range(track-1, allNum):
-            print('Track:', index+1)
-            print(pl['tracks'][index]['name'])
+            url = None
+            print('Track:', index+1, '/', allNum)
+            print('Now: ', pl['tracks'][index]['name'])
             if flagFristPlay:
+                flagFristPlay = False
                 # 第一次播放设置两个url
-                playMusic(pl['tracks'][index]['id'], seek, pl['tracks']
-                          [index+1]['id'] if index < allNum else None)
+                if index < allNum - 1:
+                    print('Next:', pl['tracks'][index+1]['name'])
+                    url = playMusic(pl['tracks'][index]['id'], seek,
+                              pl['tracks'][index+1]['id'])
+                else:
+                    url = playMusic(pl['tracks'][index]['id'], seek)
             else:
                 # 后期设置urlNext就能无缝连播了
-                playMusic(nextId=pl['tracks'][index+1]
-                          ['id'] if index < allNum else None)
+                if index < allNum - 1:
+                    print('Next:', pl['tracks'][index+1]['name'])
+                    url = playMusic(nextId=pl['tracks'][index+1]['id'])
             # 等他放完
-            time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
-        #     info=dlnaDevice.media_info()
-        #     while not info or info and info["s:Envelope"][0]["s:Body"][0]["u:GetMediaInfoResponse"][0]['MediaDuration'][0] != '':
-        #         time.sleep(1)
-        #         info=dlnaDevice.media_info()
-        # print('\r' + info)
+            if showSeek:
+                time.sleep(5)
+                info = positionInfo()
+                # 判断是否放完
+                while info['TrackURI'][0] == url and info['RelTime'][0] != '00:00:00':
+                    print(info['RelTime'][0], '/', info['TrackDuration'][0], end='\r')
+                    time.sleep(5)
+                    info = positionInfo()
+            else:
+                time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
+
+            # 放完了之后并没有切换到 urlNext
+            info = positionInfo()
+            if positionInfo()['TrackURI'][0] == url and info['RelTime'][0] == '00:00:00':
+                flagFristPlay = True
 
 
 def playMusic(id=None, seek='00:00:00', nextId=None):
     """ 播放歌曲id
     """
-    url = 'http://music.163.com/song/media/outer/url?id=' + str(id) + '.mp3' if id else None
-    urlNext = 'http://music.163.com/song/media/outer/url?id=' + str(nextId) + '.mp3' if nextId else None
+    url = 'http://music.163.com/song/media/outer/url?id=' + \
+        str(id) + '.mp3' if id else None
+    urlNext = 'http://music.163.com/song/media/outer/url?id=' + \
+        str(nextId) + '.mp3' if nextId else None
     playUrl(url, urlNext)
+    return url
 
 
 # ========================================================
@@ -669,6 +689,30 @@ def discover(name='', ip='', timeout=1, st=SSDP_ALL, mx=3,
     return devices
 
 
+def mediaInfo():
+    global dlnaDevice
+    """获取播放的媒体信息
+    一直获取直到返回有效结果
+    """
+    info = dlnaDevice.media_info()
+    while not info:
+        time.sleep(0.5)
+        info = dlnaDevice.media_info()
+    return info["s:Envelope"][0]["s:Body"][0]["u:GetMediaInfoResponse"][0]
+
+
+def positionInfo():
+    global dlnaDevice
+    """获取播放的位置信息
+    一直获取直到返回有效结果
+    """
+    info = dlnaDevice.position_info()
+    while not info:
+        time.sleep(0.5)
+        info = dlnaDevice.position_info()
+    return info["s:Envelope"][0]["s:Body"][0]["u:GetPositionInfoResponse"][0]
+
+
 def playUrl(url=None, urlNext=None):
     """ 播放url
     """
@@ -688,11 +732,11 @@ def playUrl(url=None, urlNext=None):
             dlnaDevice.set_next_media(url=urlNext)
         if url:
             dlnaDevice.play()
-        info = dlnaDevice.media_info()
-        while not info:
-            time.sleep(0.1)
-            info = dlnaDevice.media_info()
-        print(info)
+        info = mediaInfo()
+        if info['CurrentURI']:
+            print('Now: ', info['CurrentURI'][0])
+        if info['NextURI']:
+            print('Next:', info['NextURI'][0])
     except Exception as e:
         print('Device is unable to play media.')
         print('Play exception:\n{}'.format(traceback.format_exc()))
@@ -770,11 +814,8 @@ if __name__ == '__main__':
     elif action == 'stop':
         dlnaDevice.stop()
     elif action == 'info':
-        info = dlnaDevice.media_info()
-        while not info:
-            time.sleep(0.1)
-            info = dlnaDevice.media_info()
-        print(info)
+        print(mediaInfo())
+        print(positionInfo())
     else:
         if vol:
             dlnaDevice.volume(vol)
