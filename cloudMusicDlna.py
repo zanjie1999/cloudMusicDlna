@@ -314,9 +314,10 @@ def playPlaylist(id, seek, track):
         if not track or track < 1 or track > allNum:
             track = 1
         flagFristPlay = True
+        url = None
+        info = None
         for index in range(track-1, allNum):
-            url = None
-            print('Track:', index+1, '/', allNum)
+            print('\nTrack:', index+1, '/', allNum)
             print('Now: ', pl['tracks'][index]['name'])
             if flagFristPlay:
                 flagFristPlay = False
@@ -327,15 +328,16 @@ def playPlaylist(id, seek, track):
                               pl['tracks'][index+1]['id'])
                 else:
                     url = playMusic(pl['tracks'][index]['id'], seek)
+                time.sleep(5)
+                info = positionInfo()
             else:
+                url = info['TrackURI'][0]
                 # 后期设置urlNext就能无缝连播了
                 if index < allNum - 1:
                     print('Next:', pl['tracks'][index+1]['name'])
-                    url = playMusic(nextId=pl['tracks'][index+1]['id'])
+                    playMusic(nextId=pl['tracks'][index+1]['id'])
             # 等他放完
-            if showSeek:
-                time.sleep(5)
-                info = positionInfo()
+            if showSeek:                    
                 # 判断是否放完
                 while info['TrackURI'][0] == url and info['RelTime'][0] != '00:00:00':
                     print(info['RelTime'][0], '/', info['TrackDuration'][0], end='\r')
@@ -346,7 +348,7 @@ def playPlaylist(id, seek, track):
 
             # 放完了之后并没有切换到 urlNext
             info = positionInfo()
-            if positionInfo()['TrackURI'][0] == url and info['RelTime'][0] == '00:00:00':
+            if info['TrackURI'][0] == url and info['RelTime'][0] == '00:00:00':
                 flagFristPlay = True
 
 
