@@ -56,6 +56,8 @@ dlnaIp = ''
 dlnaName = ''
 playlistId = ''
 musicId = ''
+kindle = False
+player = '/mnt/us/usbnet/bin/mplayer'
 
 # config from dlna
 SSDP_GROUP = ("239.255.255.250", 1900)
@@ -313,18 +315,24 @@ def playPlaylist(id, seek, track):
             track = 1
         flagFristPlay = True
         for index in range(track-1, allNum):
-            print('Track:', index+1)
+            print('Track: {}/{}'.format(index+1, allNum))
             print(pl['tracks'][index]['name'])
-            if flagFristPlay:
-                # 第一次播放设置两个url
-                playMusic(pl['tracks'][index]['id'], seek, pl['tracks']
-                          [index+1]['id'] if index < allNum else None)
+            if kindle:
+                os.system("eips 'Track: {}/{}'".format(index+1, allNum))
+                os.system("eips 0 1 '{}'".format(pl['tracks'][index]['name']))
+                # 本地播放就一首首的放
+                playMusic(pl['tracks'][index]['id'])
             else:
-                # 后期设置urlNext就能无缝连播了
-                playMusic(nextId=pl['tracks'][index+1]
-                          ['id'] if index < allNum else None)
-            # 等他放完
-            time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
+                if flagFristPlay:
+                    # 第一次播放设置两个url
+                    playMusic(pl['tracks'][index]['id'], seek, pl['tracks']
+                            [index+1]['id'] if index < allNum else None)
+                else:
+                    # 后期设置urlNext就能无缝连播了
+                    playMusic(nextId=pl['tracks'][index+1]
+                            ['id'] if index < allNum else None)
+                # 等他放完
+                time.sleep(pl['tracks'][index]['bMusic']['playTime'] / 1000)
         #     info=dlnaDevice.media_info()
         #     while not info or info and info["s:Envelope"][0]["s:Body"][0]["u:GetMediaInfoResponse"][0]['MediaDuration'][0] != '':
         #         time.sleep(1)
@@ -337,7 +345,11 @@ def playMusic(id=None, seek='00:00:00', nextId=None):
     """
     url = 'http://music.163.com/song/media/outer/url?id=' + str(id) + '.mp3' if id else None
     urlNext = 'http://music.163.com/song/media/outer/url?id=' + str(nextId) + '.mp3' if nextId else None
-    playUrl(url, urlNext)
+    if kindle:
+        # 此处播放会阻塞
+        os.system(player + ' ' + url)
+    else:
+        playUrl(url, urlNext)
 
 
 # ========================================================
@@ -700,11 +712,11 @@ def playUrl(url=None, urlNext=None):
 
 if __name__ == '__main__':
     def help():
-        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...] [--urlNext http://...]')
+        print('cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [-v <volume 0-100>] [--seek 00:00:00] [-t <trackNum>] [-u http://...] [--urlNext http://...] [-k]')
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:d:l:s:", [
-                                   'help', 'play', 'pause', 'stop', 'info', 'vol=', 'seek=', 'track=', 'url=', 'urlNext='])
+        opts, args = getopt.getopt(sys.argv[1:], "hki:d:l:s:t:u:v:", [
+                                   'help', 'play', 'pause', 'stop', 'info', 'seek=', 'urlNext='])
     except getopt.GetoptError:
         help()
         sys.exit(1)
@@ -737,49 +749,60 @@ if __name__ == '__main__':
             playlistId = arg
         elif opt == '-s':
             musicId = arg
-        elif opt == '--vol':
+        elif opt == '-v':
             vol = int(arg)
         elif opt == '--seek':
             seek = arg
-        elif opt == '--track':
+        elif opt == '-t':
             track = int(arg)
-        elif opt == '--url':
+        elif opt == '-u':
             url = arg
         elif opt == '--urlNext':
             urlNext = arg
+        elif opt == '-k':
+            kindle = True
 
-    # 根据条件扫描dlna设备
-    allDevices = discover(name=dlnaName, ip=dlnaIp,
-                          timeout=timeout, st=URN_AVTransport_Fmt, ssdp_version=ssdp_version)
-    if not allDevices:
-        print('No devices found')
-        sys.exit(1)
-
-    print('Devices:')
-    for d in allDevices:
-        print(' {} {}'.format('[o]' if d.has_av_transport else '[x]', d))
-    dlnaDevice = allDevices[0]
-    print('Use:', dlnaDevice)
-
-    # 执行action
-    if action == 'play':
-        dlnaDevice.play()
-    elif action == 'pause':
-        dlnaDevice.pause()
-    elif action == 'stop':
-        dlnaDevice.stop()
-    elif action == 'info':
-        info = dlnaDevice.media_info()
-        while not info:
-            time.sleep(0.1)
-            info = dlnaDevice.media_info()
-        print(info)
-    else:
+    if kindle:
+        # 使用kindle本地的mplayer播放音乐
         if vol:
-            dlnaDevice.volume(vol)
-        if url or urlNext:
-            playUrl(url, urlNext)
-        elif musicId:
+            player = player + ' volume=' + str(vol * 0.3 - 30)
+        if musicId:
             playMusic(musicId, seek)
         elif playlistId:
             playPlaylist(playPlaylist, seek, track)
+    else:
+        # 根据条件扫描dlna设备
+        allDevices = discover(name=dlnaName, ip=dlnaIp,
+                            timeout=timeout, st=URN_AVTransport_Fmt, ssdp_version=ssdp_version)
+        if not allDevices:
+            print('No devices found')
+            sys.exit(1)
+
+        print('Devices:')
+        for d in allDevices:
+            print(' {} {}'.format('[o]' if d.has_av_transport else '[x]', d))
+        dlnaDevice = allDevices[0]
+        print('Use:', dlnaDevice)
+
+        # 执行action
+        if action == 'play':
+            dlnaDevice.play()
+        elif action == 'pause':
+            dlnaDevice.pause()
+        elif action == 'stop':
+            dlnaDevice.stop()
+        elif action == 'info':
+            info = dlnaDevice.media_info()
+            while not info:
+                time.sleep(0.1)
+                info = dlnaDevice.media_info()
+            print(info)
+        else:
+            if vol:
+                dlnaDevice.volume(vol)
+            if url or urlNext:
+                playUrl(url, urlNext)
+            elif musicId:
+                playMusic(musicId, seek)
+            elif playlistId:
+                playPlaylist(playPlaylist, seek, track)
