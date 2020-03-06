@@ -33,6 +33,7 @@ url | 指定url播放
 urlNext | 指定下一个播放的url
 k | 在kindle上使用mplayer播放音乐的姿势，会在屏幕左上角输出播放曲目数
 
+Tips：实测在kindle上进行dlna推送需要在iptables允许所有入站请求
 
 ### 更新日志
 2020/02/04 在最后一分钟写完了第一版
