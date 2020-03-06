@@ -14,9 +14,9 @@ dlna是怎么工作的，为什么app关掉了播放器还能继续播放直到�
 额外的功能：可以直接指定给播放的url，可以是电台，视频等等设备能直接访问的内容
 
 ### 如何使用
-需要python3（python2未测试）
+需要python3
 
-```cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [--vol <volume 0-100>] [--seek 00:00:00] [--track 1] [--url http://...] [--urlNext http://...]```
+```cloudMusicDlna.py [--play] [--pause] [--stop] [--info] [-i <device ip>] [-d <device name>] [-l <playlist id>] [-s <song id>] [-v <volume 0-100>] [--seek 00:00:00] [-t <trackNum>] [-u http://...] [--urlNext http://...] [-k]```
 
 参数 | 描述
 ---- | -----
@@ -31,6 +31,7 @@ seek | 开始时间轴
 track | 歌单中开始的曲目
 url | 指定url播放
 urlNext | 指定下一个播放的url
+k | 在kindle上使用mplayer播放音乐的姿势，会在屏幕左上角输出播放曲目数
 
 
 ### 更新日志
@@ -41,3 +42,5 @@ urlNext | 指定下一个播放的url
 2020/02/05 增加urlNext连播功能
 
 2020/02/07 增加播放进度，更准确的播放显示，修复bug
+
+2020/03/07 增加在kindle上播放音乐的功能，你说没有耳机孔？用USB DAC转接线呀OTG就可以
